@@ -20,7 +20,7 @@ edit thule/controller/app.js
 Thule.Controller.App = {
   // 処理内容はcontrollerに記述
   // ここに定義するfunctionをactionとする
-  hello : function(){ alert("hellow thule") }
+  hello : function(){ alert("hello thule") }
 }
 ```
 
