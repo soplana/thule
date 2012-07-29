@@ -60,16 +60,3 @@ edit viewfile
 
 <a href="javascript:void(0)" id="hello_link">hello</a>
 ```
-
-
-## test
-- use mocha. Mocha is a JavaScript test framework running on node.
-
-```
-$ npm install -g mocha
-$ mocha test/thule_sync_test.js 
-
-  ...
-
-  ✔ 3 tests complete (1622ms)
-```
