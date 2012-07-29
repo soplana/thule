@@ -1,2 +1,0 @@
-Thule.Controller.App = {
-}
