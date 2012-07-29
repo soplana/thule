@@ -1,5 +1,5 @@
 var assert = require("assert")
-require("../thule")
+require("../thule/thule")
 
 
 describe('Thule.Sync', function(){

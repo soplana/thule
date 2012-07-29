@@ -1,0 +1,2 @@
+Thule.Controller.App = {
+}
