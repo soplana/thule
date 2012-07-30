@@ -1,4 +1,4 @@
-# Thule Javascript FrameWork Library
+# Thule Javascript Library
 
 javascriptの "どの要素" に "どのイベントがハンドリング" されていて "どこに処理が書かれているか" をすっきりさせる事が目的のライブラリ
 
@@ -10,11 +10,11 @@ javascriptの "どの要素" に "どのイベントがハンドリング" さ�
 install
 
 ```
-$ git clone https://github.com/soplana/thule.git 
+$ git clone https://github.com/soplana/thule.git
 $ cp -r thule/thule RAILS_HOME/app/assets/javascripts/
 ```
 
-edit thule/controller/app.js
+thule/controller/app.jsにFunctionを追加
 
 ```javascript:controller/app.js
 Thule.Controller.App = {
@@ -24,7 +24,7 @@ Thule.Controller.App = {
 }
 ```
 
-edit thule/rule.js
+thule/rule.jsに、イベントタイプとDOM要素と処理（controller/action）の関係を記述
 
 ```javasciript:rule.js
 Thule.Rule = {
@@ -40,7 +40,7 @@ Thule.Rule = {
 }
 ```
 
-edit viewfile
+viewで呼び出し
 
 ```html:app/views/root/index.html
 <script src="/assets/jquery.js" type="text/javascript"></script>
@@ -59,4 +59,53 @@ edit viewfile
 </script>
 
 <a href="javascript:void(0)" id="hello_link">hello</a>
+```
+
+## controllerを作る
+---
+thule/controller/以下に任意の名前でcontrollerを作成
+
+```
+$ touch app/assets/javascripts/thule/controller/user.js
+```
+
+Thule.Controllerに、作成したcontrollerファイル名の頭文字を大文字にしたオブジェクトを追加
+作成したオブジェクトの中にapp.jsと同様actionを作成
+
+```javascript:
+Thule.Controller.User = {
+  sign_up_click : function(){ alert("sign up") }
+}
+```
+
+rule.jsに作成したcontroller/actionを追記
+
+```
+Thule.Rule = {
+  index : function(){
+    Thule.bind("click", "#hello_link", 'app/hello');
+    Thule.bind("click", "#sign_up_link", 'user/sign_up_click');
+  }
+}
+```
+
+view側で呼び出し
+newする際の引数に、作成したcontrollerを指定
+
+```html:app/views/root/index.html
+<script src="/assets/jquery.js" type="text/javascript"></script>
+<script src="/assets/thule/thule.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+  $(document).ready(function(){
+    new ThuleBase({
+      path : "/assets",
+      controller : "user",
+      rule : ["index"]
+    }).run();
+  });
+</script>
+
+<a href="javascript:void(0)" id="hello_link">hello</a>
+<a href="javascript:void(0)" id="sign_up_link"> sign up</a>
 ```
