@@ -62,7 +62,7 @@ viewで呼び出し
 ```
 
 ## controllerを作る
----
+
 thule/controller/以下に任意の名前でcontrollerを作成
 
 ```
@@ -70,6 +70,7 @@ $ touch app/assets/javascripts/thule/controller/user.js
 ```
 
 Thule.Controllerに、作成したcontrollerファイル名の頭文字を大文字にしたオブジェクトを追加
+
 作成したオブジェクトの中にapp.jsと同様actionを作成
 
 ```javascript:
@@ -90,6 +91,7 @@ Thule.Rule = {
 ```
 
 view側で呼び出し
+
 newする際の引数に、作成したcontrollerを指定
 
 ```html:app/views/root/index.html
