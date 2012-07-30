@@ -6,6 +6,83 @@
 **************************************************/
 Thule = {};
 
+ThuleBase = function(options){
+  var self = arguments.callee;
+  if(Thule.Func.isPresent(self.instance)) return self.instance;
+
+  var files = [];
+  var path  = Thule.Func.parsePath(options.path);
+  
+  files.push(path + 'thule/ie_support.js');
+  files.push(path + 'thule/event.js');
+  files.push(path + 'thule/controller/app.js');
+  if(Thule.Func.isPresent(options.controller))
+    files.push(path + 'thule/controller/' + options.controller + '.js');
+  files.push(path + 'thule/rule.js');
+ 
+  this.initialize();
+  this.setProperty({
+    files: files, 
+    path:  path, 
+    rules: options.rule
+  });
+  return (self.instance = this);
+};
+
+ThuleBase.prototype = {
+  initialize : function(){
+    this.requireFile = new Thule.RequireFile();
+    this.prefixPath  = null;
+    this.rules       = null;
+    this.sync        = null;
+  },
+
+  setProperty : function(property){
+    if(property.path != null)  this.prefixPath = property.path;
+    if(property.rules != null) this.rules      = property.rules;
+   
+    this.requireFile.set(property.files, property.rules);
+    return this;
+  },
+
+  attach : function(){
+    this.requireFile.require();
+    return this;
+  },
+
+  append : function(options){
+    var path   = Thule.Func.isPresent(options.path) ? Thule.Func.parsePath(options.path) : this.prefixPath;
+    var files  = [];
+    if(Thule.Func.isPresent(options.controller))
+      files.push(path + 'thule/controller/' + options.controller + '.js');
+    this.rules = null;
+    
+    this.setProperty({
+      files: files, 
+      path:  path, 
+      rules: options.rule
+    });
+    return this;
+  },
+
+  run : function(_rules){
+    this.rules =  _rules || this.rules;
+   
+    console.log(this.rules)
+    if( this.rules.every(function(rule){
+          if(!!Thule.Rule && Thule.Func.isPresent(Thule.Rule[rule])) return true
+        }) ){
+      this.rules.forEach(function(rule){
+        Thule.Rule[rule]();
+      });
+      return this;
+    };
+    
+    this.attach();
+    return this;
+  }
+};
+
 Thule.RequireData = function(files, rules){
   this.appendFiles   = {};
   this.requiredFiles = [];
@@ -93,83 +170,6 @@ Thule.RequireFile.prototype = {
 
 };
 
-ThuleBase = function(options){
-  var self = arguments.callee;
-  if(Thule.Func.isPresent(self.instance)) return self.instance;
-
-  var files = [];
-  var path  = Thule.Func.parsePath(options.path);
-  
-  files.push(path + 'thule/ie_support.js');
-  files.push(path + 'thule/event.js');
-  files.push(path + 'thule/controller/app.js');
-  if(Thule.Func.isPresent(options.controller))
-    files.push(path + 'thule/controller/' + options.controller + '.js');
-  files.push(path + 'thule/rule.js');
- 
-  this.initialize();
-  this.setProperty({
-    files: files, 
-    path:  path, 
-    rules: options.rule
-  });
-  return (self.instance = this);
-};
-
-ThuleBase.prototype = {
-  initialize : function(){
-    this.requireFile = new Thule.RequireFile();
-    this.prefixPath  = null;
-    this.rules       = null;
-    this.sync        = null;
-  },
-
-  setProperty : function(property){
-    if(property.path != null)  this.prefixPath = property.path;
-    if(property.rules != null) this.rules      = property.rules;
-   
-    this.requireFile.set(property.files, property.rules);
-    return this;
-  },
-
-  attach : function(){
-    this.requireFile.require();
-    return this;
-  },
-
-  append : function(options){
-    var path   = Thule.Func.isPresent(options.path) ? Thule.Func.parsePath(options.path) : this.prefixPath;
-    var files  = [];
-    if(Thule.Func.isPresent(options.controller))
-      files.push(path + 'thule/controller/' + options.controller + '.js');
-    this.rules = null;
-    
-    this.setProperty({
-      files: files, 
-      path:  path, 
-      rules: options.rule
-    });
-    return this;
-  },
-
-  run : function(_rules){
-    this.rules =  _rules || this.rules;
-   
-    console.log(this.rules)
-    if( this.rules.every(function(rule){
-          if(!!Thule.Rule && Thule.Func.isPresent(Thule.Rule[rule])) return true
-        }) ){
-      this.rules.forEach(function(rule){
-        Thule.Rule[rule]();
-      });
-      return this;
-    };
-    
-    this.attach();
-    return this;
-  }
-};
-
 Thule.Func = {
   isPresent : function(object){
     
@@ -219,11 +219,11 @@ Thule.Model = {};
 
 Thule.bind = function(thuleEvent, trigger, userEvent){
   function parseEvent(event){
-    var events = event.split('/');
-    var str    = Array.prototype.slice.call(events[0]);
-    str[0]     = str[0].toUpperCase();
+    var events     = event.split('/');
+    var controller = Array.prototype.slice.call(events[0]);
+    controller[0]  = controller[0].toUpperCase();
     return {
-      controller : str.join(''),
+      controller : controller.join(''),
       action     : events[1]
     };
   };
