@@ -1,0 +1,48 @@
+<html>
+	<head>
+		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
+		<script type="text/javascript" src="../thule/thule_support.js"></script>
+		<script type="text/javascript">
+			$(function(){
+        var User = makeClass({
+
+          initialize : function(userName){
+            this.public.name = userName;
+          },
+
+          public : {
+            getName : function(){
+              return this.name
+            }
+          }
+
+        });
+
+        var Article = makeClass({
+
+          initialize : function(title){
+            this.public.title = title;
+          },
+
+          public : {
+            getTitle : function(){
+              return this.title
+            }
+          }
+
+        });
+        var user  = new User("hoge");
+        var user2 = new User("lloge");
+        console.log(user);
+        console.log(user2);
+
+        console.log(user.getName());
+        console.log(user2.getName());
+			})
+		</script>
+	</head>
+
+	<body>
+	
+	</body>
+</html>
