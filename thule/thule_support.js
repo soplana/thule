@@ -11,53 +11,61 @@ so.methodStore.prototype = {
   }
 };
 
-so.object = {
-  methodStore : null,
+so.object = function(){
+  this.klass = null;
+};
+so.object.prototype = {
+  make : function(_class){
+    this.notRunConstructor = true; 
+    this.klass             = _class; 
+    this.methodStore       = new so.methodStore(_class);
+    
+    this.klass = this.constructor.apply(this);
+    this.klass.new = so.object.new;
+    this.notRunConstructor = false; 
+    return this.klass;
+  },
 
   constructor : function(){
-    var property = so.object.initialize(arguments); 
-    so.object.attachProperty.call(this, property);
-    so.object.clear();
-  },
-
-  new : function(args){
-    return new this(args);
-  },
-
-  make : function(_class){
-    var newClass = so.object.constructor;
-    newClass.new = so.object.new;
-    so.object.methodStore = new so.methodStore(_class);
-    return newClass;
-  },
-
-  setPublicProperty : function(_public, properties){
-    var property = properties["public"][_public];
-
-    if((typeof property) == "function"){
-      this.__proto__[_public] = property;
-    }else{
-      this[_public] = property;
+    if(!this.notRunConstructor){
+      console.log(this);
+      var property = this.initialize(arguments); 
+      this.attachProperty(property);
     }
-  },
-
-  initialize : function(args){
-    var initialize = so.object.methodStore.initialize;
-    var property   = {public : {}, private : {}}; 
-    initialize.apply(property, args);
-    return property;
+    return arguments.callee;
   },
 
   attachProperty : function(property){
     for(var initPublicProperty in property.public)
-      so.object.setPublicProperty.call(this, initPublicProperty, property);  
+      so.object.setPublicProperty.call(this.klass, initPublicProperty, property);  
     
-    for(var prototypePublicProperty in so.object.methodStore.getPublic())
-      so.object.setPublicProperty.call(this, prototypePublicProperty, so.object.methodStore.methods);
+    for(var prototypePublicProperty in this.methodStore.getPublic())
+      so.object.setPublicProperty.call(this.klass, prototypePublicProperty, this.methodStore.methods);
   },
 
-  clear : function(){
+  initialize : function(args){
+    var initialize = this.methodStore.initialize;
+    var property   = {public : {}, private : {}}; 
+    initialize.apply(property, args);
+    return property;
   }
 };
 
-so.makeClass = so.object.make;
+so.object.new = function(args){
+  return new this(args);
+};
+
+so.object.setPublicProperty = function(_public, properties){
+  var property = properties["public"][_public];
+
+  if((typeof property) == "function"){
+    this.__proto__[_public] = property;
+  }else{
+    this[_public] = property;
+  }
+};
+
+so.makeClass = function(_class){
+  var klass = new so.object().make(_class);
+  return klass;
+}
