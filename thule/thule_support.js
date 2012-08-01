@@ -1,23 +1,23 @@
-var ThuleSupport = {}
+var so = {}
 
-ThuleSupport.methodStore = function(_methods){
+so.methodStore = function(_methods){
   this.methods = _methods;
   this.initialize = _methods.initialize || function(){};
 };
 
-ThuleSupport.methodStore.prototype = {
+so.methodStore.prototype = {
   getPublic : function(){
     return this.methods.public;
   }
 };
 
-ThuleSupport.Object = {
+so.object = {
   methodStore : null,
 
   constructor : function(){
-    var property = ThuleSupport.Object.initialize(arguments); 
-    ThuleSupport.Object.attachProperty.call(this, property);
-    ThuleSupport.Object.clear();
+    var property = so.object.initialize(arguments); 
+    so.object.attachProperty.call(this, property);
+    so.object.clear();
   },
 
   new : function(args){
@@ -25,9 +25,9 @@ ThuleSupport.Object = {
   },
 
   make : function(_class){
-    var newClass = ThuleSupport.Object.constructor;
-    newClass.new = ThuleSupport.Object.new;
-    ThuleSupport.Object.methodStore = new ThuleSupport.methodStore(_class);
+    var newClass = so.object.constructor;
+    newClass.new = so.object.new;
+    so.object.methodStore = new so.methodStore(_class);
     return newClass;
   },
 
@@ -42,7 +42,7 @@ ThuleSupport.Object = {
   },
 
   initialize : function(args){
-    var initialize = ThuleSupport.Object.methodStore.initialize;
+    var initialize = so.object.methodStore.initialize;
     var property   = {public : {}, private : {}}; 
     initialize.apply(property, args);
     return property;
@@ -50,14 +50,14 @@ ThuleSupport.Object = {
 
   attachProperty : function(property){
     for(var initPublicProperty in property.public)
-      ThuleSupport.Object.setPublicProperty.call(this, initPublicProperty, property);  
+      so.object.setPublicProperty.call(this, initPublicProperty, property);  
     
-    for(var prototypePublicProperty in ThuleSupport.Object.methodStore.getPublic())
-      ThuleSupport.Object.setPublicProperty.call(this, prototypePublicProperty, ThuleSupport.Object.methodStore.methods);
+    for(var prototypePublicProperty in so.object.methodStore.getPublic())
+      so.object.setPublicProperty.call(this, prototypePublicProperty, so.object.methodStore.methods);
   },
 
   clear : function(){
   }
 };
 
-var makeClass = ThuleSupport.Object.make;
+so.makeClass = so.object.make;

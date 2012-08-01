@@ -4,7 +4,7 @@
 		<script type="text/javascript" src="../thule/thule_support.js"></script>
 		<script type="text/javascript">
 			$(function(){
-        var User = makeClass({
+        var User = so.makeClass({
 
           initialize : function(userName){
             this.public.name = userName;
@@ -18,7 +18,7 @@
 
         });
 
-        var Article = makeClass({
+        var Article = so.makeClass({
 
           initialize : function(title){
             this.public.title = title;
