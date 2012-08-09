@@ -1,2 +1,3 @@
-Thule.Controller.App = {
+$tl.Controller     = $tl.Controller || {};
+$tl.Controller.App = {
 }

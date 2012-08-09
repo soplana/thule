@@ -1,178 +1,163 @@
 /**************************************************
-* Thule Javascript Library v0.0.1
-* Copyright 2011-2012, Leeno
-* 
-* MIT Licence
+* thule.js v0.0.2
 **************************************************/
 Thule = {};
+$tl   = Thule;
 
-ThuleBase = function(options){
-  var self = arguments.callee;
-  if(Thule.Func.isPresent(self.instance)) return self.instance;
 
-  var files = [];
-  var path  = Thule.Func.parsePath(options.path);
-  
-  files.push(path + 'thule/ie_support.js');
-  files.push(path + 'thule/event.js');
-  files.push(path + 'thule/controller/app.js');
-  if(Thule.Func.isPresent(options.controller))
-    files.push(path + 'thule/controller/' + options.controller + '.js');
-  files.push(path + 'thule/rule.js');
- 
-  this.initialize();
-  this.setProperty({
-    files: files, 
-    path:  path, 
-    rules: options.rule
-  });
-  return (self.instance = this);
-};
 
-ThuleBase.prototype = {
-  initialize : function(){
-    this.requireFile = new Thule.RequireFile();
-    this.prefixPath  = null;
-    this.rules       = null;
-    this.sync        = null;
+
+
+//***********************************************
+// Thule main class
+//***********************************************
+$tl.App = $class({
+  initialize : function(options){
+    this.options = this.createDefaultOptions(options);
+    this.requireCompletionFlag = false;
   },
 
-  setProperty : function(property){
-    if(property.path != null)  this.prefixPath = property.path;
-    if(property.rules != null) this.rules      = property.rules;
-   
-    this.requireFile.set(property.files, property.rules);
-    return this;
-  },
-
-  attach : function(){
-    this.requireFile.require();
-    return this;
-  },
-
-  append : function(options){
-    var path   = Thule.Func.isPresent(options.path) ? Thule.Func.parsePath(options.path) : this.prefixPath;
-    var files  = [];
-    if(Thule.Func.isPresent(options.controller))
-      files.push(path + 'thule/controller/' + options.controller + '.js');
-    this.rules = null;
-    
-    this.setProperty({
-      files: files, 
-      path:  path, 
-      rules: options.rule
-    });
-    return this;
-  },
-
-  run : function(_rules){
-    this.rules =  _rules || this.rules;
-   
-    console.log(this.rules)
-    if( this.rules.every(function(rule){
-          if(!!Thule.Rule && Thule.Func.isPresent(Thule.Rule[rule])) return true
-        }) ){
-      this.rules.forEach(function(rule){
-        Thule.Rule[rule]();
-      });
+  public : {
+    run : function(){
+      this.loadScriptFile();
+      this.runRule();
       return this;
-    };
-    
-    this.attach();
-    return this;
-  }
-};
+    },
 
-Thule.RequireData = function(files, rules){
-  this.appendFiles   = {};
-  this.requiredFiles = [];
-  this.rules         = rules || [];
-  this.files         = files;
-  this.isRunning     = null;
+    append : function(options){
+      //this.options = this.addDefaultOptions(options);
+      //this.loadScriptFile();
+      //this.runRule();
+      return this;
+    }
+  },
 
-  files.forEach(function(file){
-    this.appendFiles[file] = false;
-  }, this);
-};
-
-Thule.RequireData.prototype = {
-  require : function(){
-    if( this.isRunning != null ) return null;
-    
-    this.start();
-    var sync = new Thule.Sync();
-    var self = this;
-
-    this.files.forEach(function(file){
-      sync.next(function(_sync){
-        var script  = document.createElement('script');
-        script.type = 'text/javascript';
-        script.src  = file;
-        script.onload = function(){
-          self.appendFiles[file] = true;
-          self.requiredFiles.push(file);
-          _sync.finish();
+  private : {
+    runRule : function(){
+      var self = this;
+      var interval = setInterval(function(){
+        if( self.requireCompletionFlag ){
+          clearInterval(interval); 
+          self.fire();
         };
-        document.body.appendChild(script);
+      }, 100);
+    },
+
+    fire : function(){
+      this.options.rule.forEach(function(rule){
+        $tl.Rule[rule].call(this);
+      }, this);
+    },
+
+    bind : function(eventType, trigger, userEvent){
+      var events = this.parseEvent(userEvent);
+      var event  = null;
+
+      if($tl.Support.isPresent($tl.Controller[events.controller]))
+        event = $tl.Controller[events.controller][events.action];
+      if($tl.Support.isBlank(event))
+        return null;
+
+      if(eventType === 'load') 
+        event(this);
+      else
+        $tl.Event[eventType](trigger, event);
+    },
+
+    createDefaultOptions : function(options){
+      var _options        = {};
+      _options.path       = options.path       || '/';
+      _options.rule       = options.rule       || [];
+      _options.controller = options.controller || [];
+      return _options;
+    },
+
+    loadScriptFile : function(){
+      var prefixPath  = this.parsePath();
+      var files = [
+        prefixPath + 'thule/ie_support.js',
+        prefixPath + 'thule/controller/app.js'
+      ];
+
+      this.options.controller.forEach(function(controller){
+        files.push( prefixPath + 'thule/controller/' + controller + '.js');
       });
-    }, this);
-  },
+      files.push(prefixPath + 'thule/rule.js');
 
-  flags : function(){
-    var flags = [];
-    this.files.forEach(function(file){
-      flags.push(this.appendFiles[file]);
-    }, this);
-    return flags;
-  },
+      this.syncLoad(files);
+    },
 
-  start : function(){
-    this.isRunning = true;
-  },
+    syncLoad : function(files){
+      var sync = new $tl.Sync();
+      files.forEach(function(file){
+        sync.next(function(_sync){
+          $.ajax({
+            url : file,
+            dataType: "script",
+            success : function(){_sync.finish()}
+          });
+        });
+      });
 
-  end : function(){
-    this.isRunning = false;
+      sync.next(function(__sync){
+        this.requireCompletionFlag = true;
+        __sync.finish();
+      }, null, this);
+    },
+
+    parsePath : function(path){
+      var path = this.options.path;
+      if($tl.Support.isBlank(path)) return '/';
+      if($tl.Support.isBlank(path.match(/^\//))) path = '/'+path; 
+      if($tl.Support.isBlank(path.match(/\/$/))) path = path+'/'; 
+      return path;
+    },
+
+    parseEvent : function(event){
+      var events = event.split('/');
+      var str    = Array.prototype.slice.call(events[0]);
+      str[0]     = str[0].toUpperCase();
+      return {
+        controller : str.join(''),
+        action     : events[1]
+      };
+    },
+
+    parseEvent : function(event){
+      var events = event.split('/');
+      var str    = Array.prototype.slice.call(events[0]);
+      str[0]     = str[0].toUpperCase();
+      return {
+        controller : str.join(''),
+        action     : events[1]
+      };
+    }
+  }
+
+});
+
+
+
+
+
+//***********************************************
+// thule Event
+//***********************************************
+$tl.Event = {
+  click : function(target, func){
+    $(target).click( function(){func(new ThuleBase(), this)} );
   }
 };
 
-Thule.RequireFile = function(){
-  this.requireDataList = [];
-};
 
-Thule.RequireFile.prototype = {
-  set : function(files, rules){
-    var _requiredFiles = [];
-    this.requireDataList.forEach(function(requireData){
-      _requiredFiles = _requiredFiles.concat(requireData.requiredFiles);
-    });
-    this.requireDataList.push( 
-      new Thule.RequireData(Thule.Func.diff(files, _requiredFiles), rules)
-    );
-  },
 
-  require : function(){
-    var sync = new Thule.Sync();
-  
-    this.requireDataList.forEach(function(data){
-      if( Thule.Func.allTrue(data.flags()) ) return null; 
-      sync.next(function(){
-        data.require();
 
-      }, function(_sync){
-        if( Thule.Func.allTrue(data.flags()) ){
-          data.rules.forEach(function(rule){ Thule.Rule[rule]() });
-          data.end();
-          _sync.finish();
-        }
-      });
-    });
-  }
 
-};
-
-Thule.Func = {
+//***********************************************
+// Support methods
+//***********************************************
+$tl.Support = {
   isPresent : function(object){
-    
     if(object instanceof Array){
       if(object.length == 0) return false;
       else return true;
@@ -185,88 +170,48 @@ Thule.Func = {
       for(var i in object) notEmpty = true;
       return notEmpty;
     };
-    
     return !!object;
   },
 
   isBlank : function(object){
-    return !Thule.Func.isPresent(object);
-  },
-
-  allTrue : function(list){
-    return (list || []).every(function(i){return i})
-  },
-
-  parsePath : function(path){
-    if(Thule.Func.isBlank(path)) return '/';
-    if(Thule.Func.isBlank(path.match(/^\//))) path = '/'+path; 
-    if(Thule.Func.isBlank(path.match(/\/$/))) path = path+'/'; 
-    return path;
-  },
-
-  diff : function(mainList, diffList){
-    var list = (mainList || []).map(function(line){
-      if(!diffList.some(function(d){return d==line})) return line;
-    });
-    var compactList = [];
-    list.forEach(function(i){if(Thule.Func.isPresent(i)) compactList.push(i)});
-    return compactList;
+    return !$tl.Support.isPresent(object);
   }
 };
 
-Thule.Controller = {};
-Thule.Model = {};
-
-Thule.bind = function(thuleEvent, trigger, userEvent){
-  function parseEvent(event){
-    var events     = event.split('/');
-    var controller = Array.prototype.slice.call(events[0]);
-    controller[0]  = controller[0].toUpperCase();
-    return {
-      controller : controller.join(''),
-      action     : events[1]
-    };
-  };
-
-  var events = parseEvent(userEvent);
-  var event = null;
-
-  if(Thule.Func.isPresent(Thule.Controller[events.controller]))
-    event  = Thule.Controller[events.controller][events.action];
-  if(Thule.Func.isBlank(event)) return null;
-  
-  if(thuleEvent == 'load') event(new ThuleBase());
-  else Thule.Event[thuleEvent](trigger, event);
-};
 
 
-Thule.SyncData = function(func, triggerEvent){
+
+
+//***********************************************
+// synchronization process 
+//***********************************************
+$tl.SyncData = function(func, triggerEvent){
   this.func         = func;
-  this.triggerEvent = Thule.Func.isPresent(triggerEvent) ? triggerEvent : null;
+  this.triggerEvent = $tl.Support.isPresent(triggerEvent) ? triggerEvent : null;
   this.isFinished   = false;
   this.isRunning    = null;
 }
 
-Thule.SyncQueue = function(){
+$tl.SyncQueue = function(){
   this.queue = [];
   this.runningQueue = null;
 };
 
-Thule.SyncQueue.prototype = {
+$tl.SyncQueue.prototype = {
   push : function(func, triggerEvent){
-    this.queue.push(new Thule.SyncData(func, triggerEvent));
+    this.queue.push(new $tl.SyncData(func, triggerEvent));
   },
 
-  call : function(){
+  call : function(self){
     var queueData = this.queue.filter(function(_queueData){
       if(_queueData.isFinished == false) return _queueData;
     })[0];
-    if(Thule.Func.isBlank(queueData)) return false;
+    if($tl.Support.isBlank(queueData)) return false;
 
     if(queueData.isRunning == null){
       queueData.isRunning = true;
       this.runningQueue   = queueData;
-      queueData.func(this);
+      queueData.func.call( (self || this), this);
     };
 
     if(queueData.triggerEvent != null) queueData.triggerEvent(this);
@@ -284,13 +229,14 @@ Thule.SyncQueue.prototype = {
   }
 };
 
-Thule.Sync = function(){
-  this.queue    = new Thule.SyncQueue();
+$tl.Sync = function(){
+  this.queue    = new $tl.SyncQueue();
   this.interval = null;
 };
 
-Thule.Sync.prototype = {
-  next : function(func, triggerEvent){
+$tl.Sync.prototype = {
+  next : function(func, triggerEvent, self){
+    this.self = self;
     this.queue.push(func, triggerEvent);
     this.run();
     return this;
@@ -301,9 +247,11 @@ Thule.Sync.prototype = {
     
     var self = this;
     this.interval = setInterval(function(){
-      if(!self.queue.call()){
+      console.log("hoge");
+      if(!self.queue.call(self.self)){
+        console.log("ugougo");
         clearInterval(self.interval); 
-        self.queue = new Thule.SyncQueue();
+        self.queue = new $tl.SyncQueue();
       };
     }, 100);
   }
