@@ -1,6 +1,7 @@
 # Thule Javascript Library
 
-javascriptの "どの要素" に "どのイベントがハンドリング" されていて "どこに処理が書かれているか" をすっきりさせる事が目的のライブラリ
+Javascript EventとDOMを紐付けるためのライブラリー
+Event処理を記述するcotrollerと、そのEventとDOMの関連性を示すruleを記述して使う。
 
 
 ## install & use
@@ -14,7 +15,7 @@ $ git clone https://github.com/soplana/thule.git
 $ cp -r thule/thule RAILS_HOME/app/assets/javascripts/
 ```
 
-thule/controller/app.jsにFunctionを追加
+thule/controller/app.jsにEvent functionを追加
 
 ```javascript:controller/app.js
 Thule.Controller.App = {
@@ -30,11 +31,11 @@ thule/rule.jsに、イベントタイプとDOM要素と処理（controller/actio
 Thule.Rule = {
   // 処理の単位を決めるrule
   // ページロードのタイミングでハンドリングしたいイベントを
-  // ココにrule名を付けてまとめて、view側で呼び出したり
+  // ココに任意のrule名を付けてまとめて、viewなどから呼び出す
   index : function(){
     // 第一引数: イベント名
     // 第二引数: ターゲットとなるDOM
-    // 第三引数: controller/action
+    // 第三引数: controller名/action名
     Thule.bind("click", "#hello_link", 'app/hello');
   }
 }
