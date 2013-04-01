@@ -145,7 +145,8 @@ $tl.App = $class({
 //***********************************************
 $tl.Event = {
   click : function(target, func){
-    $(target).click( function(){func(new ThuleBase(), this)} );
+    $target = $(target);
+    $target.click( function(){func(new ThuleBase(), this, $target)} );
   }
 };
 
